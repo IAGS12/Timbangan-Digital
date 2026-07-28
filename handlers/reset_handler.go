@@ -38,9 +38,9 @@ func ResetDatabase(c *fiber.Ctx) error {
 		log.Printf("Gagal insert user admin: %v", err)
 	}
 
-	// 4. Re-seed device approved
+	// 4. Re-seed device (pending — admin harus approve manual)
 	_, _ = db.Exec("INSERT INTO devices (device_code, device_name, status, pairing_status) VALUES (?, ?, ?, ?)",
-		"SCALE-ESP32-01", "Timbangan Utama Barn 1", "active", "approved")
+		"SCALE-ESP32-01", "Timbangan Utama Barn 1", "active", "pending")
 
 	// 5. Re-seed 15 rumpun sapi
 	seeds := []struct{ code, name, breed string }{
@@ -71,7 +71,7 @@ func ResetDatabase(c *fiber.Ctx) error {
 		"message":  "Database berhasil di-reset dan data sampel sudah di-seed ulang",
 		"username": "indra",
 		"password": "Agustin123",
-		"device":   "SCALE-ESP32-01 (approved)",
+		"device":   "SCALE-ESP32-01 (pending — approve manual di web)",
 		"cows":     15,
 	})
 }

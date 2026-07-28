@@ -101,7 +101,7 @@ func autoSeedIfEmpty() {
 		var devCount int
 		_ = config.DB.Get(&devCount, "SELECT COUNT(*) FROM devices WHERE device_code = 'SCALE-ESP32-01'")
 		if devCount == 0 {
-			_, _ = config.DB.Exec("INSERT INTO devices (device_code, device_name, status, pairing_status) VALUES (?, ?, ?, ?)", "SCALE-ESP32-01", "Timbangan Utama Barn 1", "active", "approved")
+			_, _ = config.DB.Exec("INSERT INTO devices (device_code, device_name, status, pairing_status) VALUES (?, ?, ?, ?)", "SCALE-ESP32-01", "Timbangan Utama Barn 1", "active", "pending")
 		}
 
 		// Insert default cows
