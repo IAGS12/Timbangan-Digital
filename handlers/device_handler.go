@@ -259,7 +259,7 @@ func (h *DeviceHandler) PostLiveWeight(c *fiber.Ctx) error {
 		FreeHeap            int64   `json:"free_heap"`
 		CpuTemp             float64 `json:"cpu_temp"`
 		UptimeSec           int64   `json:"uptime_sec"`
-		// Hardware Detail Diagnostics
+
 		Hx711NoiseSigma    int64   `json:"hx711_noise_sigma"`
 		Hx711NoiseStatus   string  `json:"hx711_noise_status"`
 		Hx711SampleRateSps int     `json:"hx711_sample_rate_sps"`
