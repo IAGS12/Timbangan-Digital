@@ -7,10 +7,12 @@ import (
 )
 
 type AppConfig struct {
-	Port string
-	DBPath string
-	JWTSecret string
-	JWTExpiry string
+	Port           string
+	DBPath         string
+	JWTSecret      string
+	JWTExpiry      string
+	AppURL         string
+	AllowedOrigins string
 }
 
 var Config AppConfig 
@@ -22,13 +24,15 @@ func LoadConfig() {
 	}
 
 	Config = AppConfig{
-		Port:      getEnv("PORT", "5000"),
-		DBPath:    getEnv("DATABASE_PATH", "./timbangan.db"),
-		JWTSecret: getEnv("JWT_SECRET", "default_secret_key"),
-		JWTExpiry: getEnv("JWT_EXPIRY", "24h"),
+		Port:           getEnv("PORT", "5000"),
+		DBPath:         getEnv("DATABASE_PATH", "./timbangan.db"),
+		JWTSecret:      getEnv("JWT_SECRET", "timbang_sapi_iot_secure_jwt_secret_key_2026"),
+		JWTExpiry:      getEnv("JWT_EXPIRY", "24h"),
+		AppURL:         getEnv("APP_URL", "http://localhost:5000"),
+		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "*"),
 	}
 
-	log.Printf("✅ Konfigurasi dimuat — Port: %s, DB: %s", Config.Port, Config.DBPath)
+	log.Printf("✅ Konfigurasi dimuat — Port: %s, DB: %s, AppURL: %s", Config.Port, Config.DBPath, Config.AppURL)
 }
 
 func getEnv(key, fallback string) string {

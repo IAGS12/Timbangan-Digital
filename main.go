@@ -34,11 +34,15 @@ func main() {
 
 	// 4. Pasang Middleware Global
 	app.Use(recover.New()) // Mencegah server crash jika ada panic
-	app.Use(logger.New())  // Logging setiap request HTTP
+	allowOrigins := config.Config.AllowedOrigins
+	if allowOrigins == "" {
+		allowOrigins = "*"
+	}
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*", // Buka untuk semua origin (Frontend React & ESP32)
-		AllowMethods: "GET,POST,PUT,DELETE",
-		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
+		AllowOrigins:     allowOrigins,
+		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, X-Requested-With",
+		AllowCredentials: true,
 	}))
 
 	// 5. Endpoint Cek Status Server (Health Check)
