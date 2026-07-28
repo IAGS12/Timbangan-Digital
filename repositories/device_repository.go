@@ -66,7 +66,7 @@ func (r *DeviceRepository) RequestPairing(code, name string) error {
 	_ = r.db.Get(&exists, "SELECT COUNT(*) FROM devices WHERE device_code = ?", code)
 	if exists > 0 {
 		_, err := r.db.Exec(
-			"UPDATE devices SET device_name = ?, pairing_status = 'pending', status = 'active' WHERE device_code = ?",
+			"UPDATE devices SET device_name = ?, pairing_status = 'pending', status = 'active', user_id = NULL WHERE device_code = ?",
 			name, code,
 		)
 		return err
