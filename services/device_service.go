@@ -22,6 +22,10 @@ func (s *DeviceService) GetAllDevices() ([]models.Device, error) {
 	return s.deviceRepo.GetAllDevices()
 }
 
+func (s *DeviceService) GetDeviceByID(id int64) (*models.Device, error) {
+	return s.deviceRepo.FindByID(id)
+}
+
 func (s *DeviceService) GetPendingDevices() ([]models.Device, error) {
 	return s.deviceRepo.GetAllPending()
 }

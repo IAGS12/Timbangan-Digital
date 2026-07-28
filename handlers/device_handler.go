@@ -103,6 +103,11 @@ func (h *DeviceHandler) ApprovePairing(c *fiber.Ctx) error {
 		return utils.BadRequest(c, err.Error())
 	}
 
+	// Notify ESP32 over MQTT
+	if dev, err := h.deviceService.GetDeviceByID(id); err == nil && dev != nil && services.GlobalMQTT != nil {
+		_ = services.GlobalMQTT.PublishPairingStatus(dev.DeviceCode, req.PairingStatus)
+	}
+
 	msg := "Perangkat berhasil disetujui"
 	if req.PairingStatus == "rejected" {
 		msg = "Perangkat berhasil ditolak"
@@ -186,10 +191,19 @@ func (h *DeviceHandler) SendCommand(c *fiber.Ctx) error {
 		CowID:   req.CowID,
 	}
 
-	// Simpan di antrean pending untuk di-poll oleh ESP32
+	// Simpan di antrean pending untuk di-poll oleh ESP32 (HTTP fallback)
 	pendingCommandsMutex.Lock()
 	pendingCommands[req.DeviceCode] = cmdObj
 	pendingCommandsMutex.Unlock()
+
+	// Kirim langsung via MQTT jika terhubung
+	if services.GlobalMQTT != nil {
+		_ = services.GlobalMQTT.PublishCommand(req.DeviceCode, req.Action, map[string]interface{}{
+			"cow_code": req.CowCode,
+			"cow_name": req.CowName,
+			"cow_id":   req.CowID,
+		})
+	}
 
 	// Broadcast via WebSocket juga
 	services.GlobalWSHub.Broadcast(fiber.Map{

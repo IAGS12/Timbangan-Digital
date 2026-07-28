@@ -30,6 +30,10 @@ func SetupRoutes(app *fiber.App) {
 	decisionService := services.NewDecisionService()
 	deviceService := services.NewDeviceService(deviceRepo)
 
+	// Inisialisasi & Jalankan MQTT Service (Port 1883 TCP)
+	mqttSvc := services.NewMQTTService("tcp://broker.emqx.io:1883", deviceService, weightService)
+	go mqttSvc.Start()
+
 	// ==========================================
 	// 3. Inisialisasi Handlers
 	// ==========================================
