@@ -29,7 +29,7 @@ func LoadConfig() {
 		JWTSecret:      getEnv("JWT_SECRET", "timbang_sapi_iot_secure_jwt_secret_key_2026"),
 		JWTExpiry:      getEnv("JWT_EXPIRY", "24h"),
 		AppURL:         getEnv("APP_URL", "http://localhost:5000"),
-		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "https://timbangan-digital-project.vercel.app,http://localhost:5173,http://localhost:3000,*"),
+		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "https://timbangan-digital-project.vercel.app,http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,https://timbangan-digital-production.up.railway.app"),
 	}
 
 	log.Printf("✅ Konfigurasi dimuat — Port: %s, DB: %s, AppURL: %s", Config.Port, Config.DBPath, Config.AppURL)

@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"time"
@@ -42,9 +43,10 @@ func main() {
 	// 4. Pasang Middleware Global
 	app.Use(recover.New()) // Mencegah server crash jika ada panic
 	app.Use(logger.New())  // Logging setiap request HTTP
-	allowOrigins := config.Config.AllowedOrigins
-	if allowOrigins == "" {
-		allowOrigins = "*"
+	allowOrigins := strings.ReplaceAll(config.Config.AllowedOrigins, ",*", "")
+	allowOrigins = strings.ReplaceAll(allowOrigins, "*,", "")
+	if allowOrigins == "" || allowOrigins == "*" {
+		allowOrigins = "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,https://timbangan-digital-production.up.railway.app"
 	}
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     allowOrigins,
