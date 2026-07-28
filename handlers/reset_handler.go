@@ -75,3 +75,16 @@ func ResetDatabase(c *fiber.Ctx) error {
 		"cows":     15,
 	})
 }
+
+// ClearDevices POST /api/admin/clear-devices — Hapus HANYA data perangkat/pairing
+func ClearDevices(c *fiber.Ctx) error {
+	db := config.DB
+	result, _ := db.Exec("DELETE FROM devices")
+	rows, _ := result.RowsAffected()
+	db.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'devices'")
+	log.Printf("🗑️ Semua data devices dihapus (%d baris)", rows)
+	return utils.Success(c, fiber.Map{
+		"message": "Semua data pairing/devices berhasil dihapus",
+		"deleted": rows,
+	})
+}
