@@ -51,6 +51,7 @@ func SetupRoutes(app *fiber.App) {
 	app.Get("/ws", websocket.New(handlers.HandleWebSocket))
 
 	// Public Endpoints (ESP32 & Auth — Bypass AuthMiddleware)
+	app.Get("/api/cows", cowHandler.GetAll)
 	app.Post("/api/weighings", weightHandler.AddWeight)
 	app.Post("/api/weighings/batch", weightHandler.BatchUpload)
 	app.Get("/api/cows/sync", cowHandler.SyncCows)
