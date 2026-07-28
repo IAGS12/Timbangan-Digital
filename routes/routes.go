@@ -69,6 +69,7 @@ func SetupRoutes(app *fiber.App) {
 	api.Get("/export/excel", exportHandler.ExportExcel) // Public fallback for Excel export
 	api.Post("/admin/reset-db", handlers.ResetDatabase)      // Dev/Debug: Reset seluruh database
 	api.Post("/admin/clear-devices", handlers.ClearDevices)  // Dev/Debug: Hapus data pairing saja
+	api.Post("/admin/clear-weighings", handlers.ClearWeighings) // Dev/Debug: Hapus data timbangan saja
 
 	// Endpoint Terproteksi (Wajib Login) — HARUS didaftarkan SETELAH route public di atas
 	protected := app.Group("/api", middleware.AuthMiddleware)

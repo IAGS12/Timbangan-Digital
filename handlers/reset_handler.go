@@ -105,3 +105,23 @@ func ClearDevices(c *fiber.Ctx) error {
 		"deleted": rows,
 	})
 }
+
+// ClearWeighings POST /api/admin/clear-weighings — Hapus HANYA data timbangan dan prediksi
+func ClearWeighings(c *fiber.Ctx) error {
+	db := config.DB
+	log.Println("⚠️ MENGHAPUS SEMUA DATA TIMBANGAN & PREDIKSI via API...")
+
+	_, _ = db.Exec("DELETE FROM predictions")
+	_, _ = db.Exec("DELETE FROM weight_records")
+	
+	// Reset auto increment untuk tabel yang dihapus
+	db.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'predictions'")
+	db.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'weight_records'")
+
+	// Update kolom last_weight dan last_weighing_date di tabel cows menjadi null/0
+	_, _ = db.Exec("UPDATE cows SET last_weight = 0, last_weighing_date = NULL")
+
+	return utils.Success(c, fiber.Map{
+		"message": "Semua data timbangan & prediksi berhasil dikosongkan.",
+	})
+}
