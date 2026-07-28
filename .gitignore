@@ -1,0 +1,8 @@
+server.exe
+smart-livestock-backend.exe
+*.exe
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+.env

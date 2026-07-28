@@ -1,0 +1,7 @@
+.git
+.env
+*.db
+*.exe
+README.md
+.vscode
+.idea
