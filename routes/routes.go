@@ -63,6 +63,7 @@ func SetupRoutes(app *fiber.App) {
 	api := app.Group("/api")
 	RegisterAuthRoutes(api, authHandler)       // Public: ESP32 poll status pairing
 	api.Get("/export/excel", exportHandler.ExportExcel) // Public fallback for Excel export
+	api.Post("/admin/reset-db", handlers.ResetDatabase)  // Dev/Debug: Reset seluruh database
 
 	// Endpoint Terproteksi (Wajib Login) — HARUS didaftarkan SETELAH route public di atas
 	protected := app.Group("/api", middleware.AuthMiddleware)

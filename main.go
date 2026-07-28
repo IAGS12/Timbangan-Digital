@@ -93,15 +93,15 @@ func autoSeedIfEmpty() {
 		var userCount int
 		_ = config.DB.Get(&userCount, "SELECT COUNT(*) FROM users WHERE username = 'indra'")
 		if userCount == 0 {
-			hash, _ := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
-			_, _ = config.DB.Exec("INSERT INTO users (username, password_hash, name, role) VALUES (?, ?, ?, ?)", "indra", string(hash), "Indra Agustin", "admin")
+			hash, _ := bcrypt.GenerateFromPassword([]byte("Agustin123"), bcrypt.DefaultCost)
+			_, _ = config.DB.Exec("INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)", "indra", "indra@livestock.com", string(hash), "admin")
 		}
 
 		// Insert default device if not exists
 		var devCount int
 		_ = config.DB.Get(&devCount, "SELECT COUNT(*) FROM devices WHERE device_code = 'SCALE-ESP32-01'")
 		if devCount == 0 {
-			_, _ = config.DB.Exec("INSERT INTO devices (device_code, device_name, ip_address, is_active, pairing_status) VALUES (?, ?, ?, ?, ?)", "SCALE-ESP32-01", "Timbangan Utama Barn 1", "192.168.43.203", 1, "approved")
+			_, _ = config.DB.Exec("INSERT INTO devices (device_code, device_name, status, pairing_status) VALUES (?, ?, ?, ?)", "SCALE-ESP32-01", "Timbangan Utama Barn 1", "active", "approved")
 		}
 
 		// Insert default cows
