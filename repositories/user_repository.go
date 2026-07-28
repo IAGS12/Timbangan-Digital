@@ -15,7 +15,7 @@ func NewUserRepository(db *sqlx.DB) *UserRepository {
 
 func (r *UserRepository) FindUsername(username string) (*models.User, error) {
 	var user models.User
-	err := r.db.Get(&user, "SELECT * FROM users WHERE username = ?", username)
+	err := r.db.Get(&user, "SELECT * FROM users WHERE LOWER(username) = LOWER(?)", username)
 	if err != nil {
 		return nil, err
 	}
