@@ -34,6 +34,7 @@ func main() {
 
 	// 4. Pasang Middleware Global
 	app.Use(recover.New()) // Mencegah server crash jika ada panic
+	app.Use(logger.New())  // Logging setiap request HTTP
 	allowOrigins := config.Config.AllowedOrigins
 	if allowOrigins == "" {
 		allowOrigins = "*"
