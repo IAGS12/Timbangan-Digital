@@ -149,23 +149,26 @@ func SeedDemo(c *fiber.Ctx) error {
 
 	// 3 sapi demo dengan data timbangan
 	demoCows := []struct {
-		code, name, breed string
-		w1, w2, w3        float64 // bobot bulan -2, -1, sekarang
-		label             string
+		code, name, breed, birthDate string
+		w1, w2, w3                   float64 // bobot bulan -2, -1, sekarang
+		label                        string
 	}{
 		// LAYAK DIPERTAHANKAN: bobot naik pesat (ADG > 0.5 kg/hari)
-		{"RFID-BALI-01", "Sapi Bali", "Bali", 340.0, 367.0, 400.0, "Layak Dipertahankan"},
+		// Sapi Bali usia ~24 bulan (2 tahun) — umur ideal penggemukan
+		{"RFID-BALI-01", "Sapi Bali", "Bali", "2024-07-29", 340.0, 367.0, 400.0, "Layak Dipertahankan"},
 		// PERLU EVALUASI: bobot naik sangat lambat (ADG ~0.13 kg/hari)
-		{"RFID-MADURA-02", "Sapi Madura", "Madura", 290.0, 294.0, 298.0, "Perlu Evaluasi"},
+		// Sapi Madura usia ~18 bulan — masih muda tapi pertumbuhan stagnan
+		{"RFID-MADURA-02", "Sapi Madura", "Madura", "2025-01-29", 290.0, 294.0, 298.0, "Perlu Evaluasi"},
 		// TIDAK LAYAK: bobot turun (ADG negatif)
-		{"RFID-PO-03", "Sapi PO", "Peranakan Ongole", 430.0, 418.0, 403.0, "Tidak Layak Dipertahankan"},
+		// Sapi PO usia ~30 bulan (2.5 tahun) — sudah dewasa tapi berat turun
+		{"RFID-PO-03", "Sapi PO", "Peranakan Ongole", "2024-01-29", 430.0, 418.0, 403.0, "Tidak Layak Dipertahankan"},
 	}
 
 	inserted := 0
 	for _, s := range demoCows {
 		res, err := db.Exec(
-			"INSERT INTO cows (cow_code, name, breed, gender, owner, status) VALUES (?, ?, ?, 'jantan', 'Peternak Demo', 'active')",
-			s.code, s.name, s.breed,
+			"INSERT INTO cows (cow_code, name, breed, gender, birth_date, owner, status) VALUES (?, ?, ?, 'jantan', ?, 'Peternak Demo', 'active')",
+			s.code, s.name, s.breed, s.birthDate,
 		)
 		if err != nil {
 			log.Printf("Gagal insert sapi %s: %v", s.name, err)
