@@ -45,3 +45,28 @@ func (r *UserRepository) UpdateRole(id int64, role string) error {
 	_, err := r.db.Exec("UPDATE users SET role = ? WHERE id = ?", role, id)
 	return err
 }
+
+func (r *UserRepository) FindByID(id int64) (*models.User, error) {
+	var user models.User
+	err := r.db.Get(&user, "SELECT id, username, email, role, created_at FROM users WHERE id = ?", id)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *UserRepository) UpdateUsername(id int64, username string) error {
+	_, err := r.db.Exec("UPDATE users SET username = ? WHERE id = ?", username, id)
+	return err
+}
+
+func (r *UserRepository) UpdatePassword(id int64, hashedPassword string) error {
+	_, err := r.db.Exec("UPDATE users SET password = ? WHERE id = ?", hashedPassword, id)
+	return err
+}
+
+func (r *UserRepository) UsernameExists(username string, excludeID int64) (bool, error) {
+	var count int
+	err := r.db.Get(&count, "SELECT COUNT(*) FROM users WHERE LOWER(username) = LOWER(?) AND id != ?", username, excludeID)
+	return count > 0, err
+}

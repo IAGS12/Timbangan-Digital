@@ -25,9 +25,9 @@ func (s *PredictionService) PredictPolynomial(cowID int64, horizonMonths int) (*
 
 	n := len(records)
 	
-	// 1. UBAH VALIDASI: Cukup minimal 3 data untuk membentuk kurva polinomial derajat 2
-	if n < 3 {
-		return nil, errors.New("data belum cukup untuk prediksi polinomial, minimal 3 penimbangan")
+	// Minimum 1 data untuk menghasilkan prediksi sederhana
+	if n < 1 {
+		return nil, errors.New("belum ada data penimbangan. Tambahkan minimal 1 data penimbangan terlebih dahulu")
 	}
 
 	// 2. SET DEFAULT: Jika parameter tidak diisi, buat default 3 bulan ke depan
@@ -35,51 +35,79 @@ func (s *PredictionService) PredictPolynomial(cowID int64, horizonMonths int) (*
 		horizonMonths = 3
 	}
 
-	// 3. AMBIL TEPAT 3 DATA TERAKHIR
-	y1 := records[n-3].Weight // Data terlama dari 3 data terakhir
-	y2 := records[n-2].Weight // Data tengah
-	y3 := records[n-1].Weight // Data terbaru (last record)
-
-	// RUMUS CEPAT POLINOMIAL (Mencari a, b, dan c dengan x1=1, x2=2, x3=3)
-	a := (y3 - 2*y2 + y1) / 2.0
-	b := (-5*y1 + 8*y2 - 3*y3) / 2.0
-	c := (3 * y1) - (3 * y2) + y3
-
-	// Prediksi untuk x selanjutnya (Data terakhir adalah x=3, maka prediksi = 3 + horizonMonths)
-	predictX := 3.0 + float64(horizonMonths)
-	predictedWeight := math.Round(((a*predictX*predictX)+(b*predictX)+c)*100) / 100
-
-	// 4. ANALISIS TREN & REKOMENDASI DSS
-	trend := "stagnan"
-	rekomendasi := "Lakukan observasi lebih lanjut terhadap manajemen pakan."
-
-	if predictedWeight > y3 && a >= 0 {
-		trend = "meningkat pesat" // Kurva naik (akselerasi)
-		rekomendasi = "SANGAT LAYAK DIPERTAHANKAN: Lanjutkan program pakan saat ini. Sapi sedang dalam fase pertumbuhan optimal."
-	} else if predictedWeight > y3 && a < 0 {
-		trend = "meningkat (melambat)" // Kurva melengkung ke bawah (hampir mentok)
-		rekomendasi = "LAYAK DIPERTAHANKAN SEMENTARA: Pantau ketat, sapi mendekati batas genetik bobot maksimal. Rencanakan penjualan/panen."
-	} else if predictedWeight <= y3 {
-		trend = "menurun / harus dijual" // Bobot anjlok atau sudah mentok puncak kurva
-		rekomendasi = "TIDAK LAYAK DIPERTAHANKAN: Segera jual atau potong sapi ini untuk menghindari kerugian pemborosan pakan."
-	}
-
-	// 5. HITUNG ADG HARIAN (Menggunakan data terbaru dan data sebelumnya)
 	lastRecord := records[n-1]
-	prevRecord := records[n-2]
-	days := lastRecord.MeasurementDate.Sub(prevRecord.MeasurementDate).Hours() / 24.0
-	
-	adg := 0.0
-	if days > 0 {
-		adg = math.Round(((y3-y2)/days)*100) / 100
-	} else {
-		// Fallback jika tidak sengaja mengukur di hari yang sama (mencegah panic devide by zero)
-		adg = math.Round(((y3-y2)/30.0)*100) / 100 
-	}
-
-	// Asumsi rata-rata 1 bulan = 30 hari untuk konversi tanggal
 	horizonDays := horizonMonths * 30
 	predictionDate := lastRecord.MeasurementDate.Add(time.Duration(horizonDays) * 24 * time.Hour).Format("2006-01-02")
+
+	var predictedWeight, adg float64
+	trend := "data awal"
+	rekomendasi := "Data masih terlalu sedikit. Lakukan penimbangan berkala agar prediksi semakin akurat."
+	accuracy := "Estimasi Awal"
+	rSquared := 0.5
+	dataUsed := n
+
+	if n == 1 {
+		// Hanya 1 data: prediksi flat (tidak berubah)
+		predictedWeight = math.Round(lastRecord.Weight*100) / 100
+		adg = 0.0
+		trend = "belum dapat ditentukan"
+		rekomendasi = "Baru 1 data tersedia. Tambahkan penimbangan berikutnya agar sistem dapat menghitung pertumbuhan."
+	} else if n == 2 {
+		// 2 data: gunakan regresi linear sederhana
+		y1 := records[n-2].Weight
+		y2 := records[n-1].Weight
+		days := lastRecord.MeasurementDate.Sub(records[n-2].MeasurementDate).Hours() / 24.0
+		if days <= 0 {
+			days = 30
+		}
+		adg = math.Round(((y2 - y1) / days) * 100) / 100
+		// Prediksi linear: tambahkan adg * horizonDays
+		predictedWeight = math.Round((y2 + adg*float64(horizonDays))*100) / 100
+		rSquared = 0.75
+		accuracy = "Estimasi Linear"
+		if predictedWeight > y2 {
+			trend = "meningkat"
+			rekomendasi = "LAYAK DIPERTAHANKAN: Sapi menunjukkan pertumbuhan positif. Tambahkan lebih banyak data untuk prediksi lebih akurat."
+		} else {
+			trend = "menurun"
+			rekomendasi = "PERLU PERHATIAN: Berat sapi tidak meningkat. Periksa manajemen pakan dan kesehatan sapi."
+		}
+		dataUsed = 2
+	} else {
+		// 3+ data: gunakan polinomial derajat 2 (rumus asli)
+		y1 := records[n-3].Weight
+		y2 := records[n-2].Weight
+		y3 := records[n-1].Weight
+
+		a := (y3 - 2*y2 + y1) / 2.0
+		b := (-5*y1 + 8*y2 - 3*y3) / 2.0
+		c := (3 * y1) - (3 * y2) + y3
+
+		predictX := 3.0 + float64(horizonMonths)
+		predictedWeight = math.Round(((a*predictX*predictX)+(b*predictX)+c)*100) / 100
+		rSquared = 1.0
+		accuracy = "Tinggi"
+		dataUsed = 3
+
+		prevRecord := records[n-2]
+		days := lastRecord.MeasurementDate.Sub(prevRecord.MeasurementDate).Hours() / 24.0
+		if days > 0 {
+			adg = math.Round(((y3 - y2) / days) * 100) / 100
+		} else {
+			adg = math.Round(((y3 - y2) / 30.0) * 100) / 100
+		}
+
+		if predictedWeight > y3 && a >= 0 {
+			trend = "meningkat pesat"
+			rekomendasi = "SANGAT LAYAK DIPERTAHANKAN: Lanjutkan program pakan saat ini. Sapi sedang dalam fase pertumbuhan optimal."
+		} else if predictedWeight > y3 && a < 0 {
+			trend = "meningkat (melambat)"
+			rekomendasi = "LAYAK DIPERTAHANKAN SEMENTARA: Pantau ketat, sapi mendekati batas genetik bobot maksimal. Rencanakan penjualan/panen."
+		} else {
+			trend = "menurun / harus dijual"
+			rekomendasi = "TIDAK LAYAK DIPERTAHANKAN: Segera jual atau potong sapi ini untuk menghindari kerugian pemborosan pakan."
+		}
+	}
 
 	return &models.PredictionResponse{
 		CowID:            cowID,
@@ -87,12 +115,12 @@ func (s *PredictionService) PredictPolynomial(cowID int64, horizonMonths int) (*
 		PredictedWeight:  predictedWeight,
 		PredictionDate:   predictionDate,
 		HorizonDays:      horizonDays,
-		RSquared:         1.0, // Polinomial derajat 2 pada 3 titik selalu melewati titiknya dengan sempurna (Akurasi absolut/1.0)
-		AccuracyCategory: "Tinggi",
+		RSquared:         rSquared,
+		AccuracyCategory: accuracy,
 		Trend:            trend,
-		Recommendation:   rekomendasi, // Jangan lupa tambahkan field ini di struct Anda
+		Recommendation:   rekomendasi,
 		ADG:              adg,
-		DataPointsUsed:   3, // Selalu merepresentasikan 3 titik referensi
+		DataPointsUsed:   dataUsed,
 	}, nil
 }
 
