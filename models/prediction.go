@@ -15,17 +15,24 @@ type Prediction struct {
 }
 
 
-type PredictionResponse struct {
-	CowID            int64   `json:"cow_id"`
-	CurrentWeight    float64 `json:"current_weight"`
-	PredictedWeight  float64 `json:"predicted_weight"`
-	PredictionDate   string  `json:"prediction_date"`
-	HorizonDays      int     `json:"horizon_days"`
-	RSquared         float64 `json:"r_squared"`
-	AccuracyCategory string  `json:"accuracy_category"`
-	Trend            string  `json:"trend"`
-	ADG              float64 `json:"adg"`
-	Recommendation   string  `json:"recommendation"`
-	DataPointsUsed   int     `json:"data_points_used"`
-	Reason           string  `json:"reason"`
+type ProjectedPoint struct {
+	Date   string  `json:"date"`
+	Weight float64 `json:"weight"`
 }
+
+type PredictionResponse struct {
+	CowID            int64            `json:"cow_id"`
+	CurrentWeight    float64          `json:"current_weight"`
+	PredictedWeight  float64          `json:"predicted_weight"`
+	PredictionDate   string           `json:"prediction_date"`
+	HorizonDays      int              `json:"horizon_days"`
+	RSquared         float64          `json:"r_squared"`
+	AccuracyCategory string           `json:"accuracy_category"`
+	Trend            string           `json:"trend"`
+	ADG              float64          `json:"adg"`
+	Recommendation   string           `json:"recommendation"`
+	DataPointsUsed   int              `json:"data_points_used"`
+	Reason           string           `json:"reason"`
+	ProjectedPoints  []ProjectedPoint `json:"projected_points"`
+}
+

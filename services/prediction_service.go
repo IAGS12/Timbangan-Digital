@@ -45,6 +45,7 @@ func (s *PredictionService) PredictPolynomial(cowID int64, horizonMonths int) (*
 	accuracy := "Estimasi Awal"
 	rSquared := 0.5
 	dataUsed := n
+	var projectedPoints []models.ProjectedPoint
 
 	if n == 1 {
 		// Hanya 1 data: prediksi flat (tidak berubah)
@@ -52,6 +53,15 @@ func (s *PredictionService) PredictPolynomial(cowID int64, horizonMonths int) (*
 		adg = 0.0
 		trend = "belum dapat ditentukan"
 		rekomendasi = "Baru 1 data tersedia. Tambahkan penimbangan berikutnya agar sistem dapat menghitung pertumbuhan."
+		
+		for i := 1; i <= horizonMonths; i++ {
+			pDate := lastRecord.MeasurementDate.Add(time.Duration(i*30) * 24 * time.Hour).Format("2006-01-02")
+			projectedPoints = append(projectedPoints, models.ProjectedPoint{
+				Date:   pDate,
+				Weight: predictedWeight,
+			})
+		}
+
 	} else if n == 2 {
 		// 2 data: gunakan regresi linear sederhana
 		y1 := records[n-2].Weight
@@ -73,6 +83,15 @@ func (s *PredictionService) PredictPolynomial(cowID int64, horizonMonths int) (*
 			rekomendasi = "PERLU PERHATIAN: Berat sapi tidak meningkat. Periksa manajemen pakan dan kesehatan sapi."
 		}
 		dataUsed = 2
+		
+		for i := 1; i <= horizonMonths; i++ {
+			pDate := lastRecord.MeasurementDate.Add(time.Duration(i*30) * 24 * time.Hour).Format("2006-01-02")
+			pWeight := math.Round((y2 + adg*float64(i*30))*100) / 100
+			projectedPoints = append(projectedPoints, models.ProjectedPoint{
+				Date:   pDate,
+				Weight: pWeight,
+			})
+		}
 	} else {
 		// 3+ data: gunakan polinomial derajat 2 (rumus asli)
 		y1 := records[n-3].Weight
@@ -107,6 +126,17 @@ func (s *PredictionService) PredictPolynomial(cowID int64, horizonMonths int) (*
 			trend = "menurun / harus dijual"
 			rekomendasi = "TIDAK LAYAK DIPERTAHANKAN: Segera jual atau potong sapi ini untuk menghindari kerugian pemborosan pakan."
 		}
+
+		for i := 1; i <= horizonMonths; i++ {
+			pDate := lastRecord.MeasurementDate.Add(time.Duration(i*30) * 24 * time.Hour).Format("2006-01-02")
+			pX := 3.0 + float64(i)
+			pWeight := math.Round(((a*pX*pX)+(b*pX)+c)*100) / 100
+			projectedPoints = append(projectedPoints, models.ProjectedPoint{
+				Date:   pDate,
+				Weight: pWeight,
+			})
+		}
+
 	}
 
 	return &models.PredictionResponse{
@@ -121,6 +151,7 @@ func (s *PredictionService) PredictPolynomial(cowID int64, horizonMonths int) (*
 		Recommendation:   rekomendasi,
 		ADG:              adg,
 		DataPointsUsed:   dataUsed,
+		ProjectedPoints:  projectedPoints,
 	}, nil
 }
 
