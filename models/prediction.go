@@ -16,6 +16,7 @@ type Prediction struct {
 
 
 type ProjectedPoint struct {
+	Month  int     `json:"month"`
 	Date   string  `json:"date"`
 	Weight float64 `json:"weight"`
 }
