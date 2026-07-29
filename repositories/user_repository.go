@@ -48,7 +48,7 @@ func (r *UserRepository) UpdateRole(id int64, role string) error {
 
 func (r *UserRepository) FindByID(id int64) (*models.User, error) {
 	var user models.User
-	err := r.db.Get(&user, "SELECT id, username, email, role, created_at FROM users WHERE id = ?", id)
+	err := r.db.Get(&user, "SELECT * FROM users WHERE id = ?", id)
 	if err != nil {
 		return nil, err
 	}
