@@ -125,3 +125,70 @@ func ClearWeighings(c *fiber.Ctx) error {
 		"message": "Semua data timbangan & prediksi berhasil dikosongkan.",
 	})
 }
+
+// SeedDemo POST /api/admin/seed-demo
+// Menghapus semua sapi & timbangan, lalu seed ulang hanya 3 sapi demo:
+//   - Sapi Bali   → Layak Dipertahankan  (bobot naik pesat)
+//   - Sapi Madura → Perlu Evaluasi       (bobot naik lambat)
+//   - Sapi PO     → Tidak Layak          (bobot turun)
+func SeedDemo(c *fiber.Ctx) error {
+	db := config.DB
+	log.Println("🌱 SEED DEMO dimulai via API...")
+
+	// Hapus data lama (timbangan & sapi)
+	_, _ = db.Exec("DELETE FROM predictions")
+	_, _ = db.Exec("DELETE FROM weight_records")
+	_, _ = db.Exec("DELETE FROM cows")
+	db.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'predictions'")
+	db.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'weight_records'")
+	db.Exec("UPDATE sqlite_sequence SET seq = 0 WHERE name = 'cows'")
+
+	t1 := time.Now().AddDate(0, -2, 0).Format("2006-01-02 15:04:05")
+	t2 := time.Now().AddDate(0, -1, 0).Format("2006-01-02 15:04:05")
+	t3 := time.Now().Format("2006-01-02 15:04:05")
+
+	// 3 sapi demo dengan data timbangan
+	demoCows := []struct {
+		code, name, breed string
+		w1, w2, w3        float64 // bobot bulan -2, -1, sekarang
+		label             string
+	}{
+		// LAYAK DIPERTAHANKAN: bobot naik pesat (ADG > 0.5 kg/hari)
+		{"RFID-BALI-01", "Sapi Bali", "Bali", 340.0, 367.0, 400.0, "Layak Dipertahankan"},
+		// PERLU EVALUASI: bobot naik sangat lambat (ADG ~0.13 kg/hari)
+		{"RFID-MADURA-02", "Sapi Madura", "Madura", 290.0, 294.0, 298.0, "Perlu Evaluasi"},
+		// TIDAK LAYAK: bobot turun (ADG negatif)
+		{"RFID-PO-03", "Sapi PO", "Peranakan Ongole", 430.0, 418.0, 403.0, "Tidak Layak Dipertahankan"},
+	}
+
+	inserted := 0
+	for _, s := range demoCows {
+		res, err := db.Exec(
+			"INSERT INTO cows (cow_code, name, breed, gender, owner, status) VALUES (?, ?, ?, 'jantan', 'Peternak Demo', 'active')",
+			s.code, s.name, s.breed,
+		)
+		if err != nil {
+			log.Printf("Gagal insert sapi %s: %v", s.name, err)
+			continue
+		}
+		cowID, _ := res.LastInsertId()
+		adg1 := (s.w2 - s.w1) / 30.0
+		adg2 := (s.w3 - s.w2) / 30.0
+		_, _ = db.Exec(`INSERT INTO weight_records (cow_id, weight, adg, measurement_date, device_id) VALUES (?, ?, ?, ?, 'SEED-DEMO')`, cowID, s.w1, 0.0, t1)
+		_, _ = db.Exec(`INSERT INTO weight_records (cow_id, weight, adg, measurement_date, device_id) VALUES (?, ?, ?, ?, 'SEED-DEMO')`, cowID, s.w2, adg1, t2)
+		_, _ = db.Exec(`INSERT INTO weight_records (cow_id, weight, adg, measurement_date, device_id) VALUES (?, ?, ?, ?, 'SEED-DEMO')`, cowID, s.w3, adg2, t3)
+		log.Printf("✓ %s seeded → %s", s.name, s.label)
+		inserted++
+	}
+
+	log.Println("✅ SEED DEMO selesai!")
+	return utils.Success(c, fiber.Map{
+		"message": "Seed demo berhasil! 3 sapi demo telah di-insert.",
+		"sapi": []fiber.Map{
+			{"nama": "Sapi Bali", "kategori": "Layak Dipertahankan", "bobot": "340→367→400 kg"},
+			{"nama": "Sapi Madura", "kategori": "Perlu Evaluasi", "bobot": "290→294→298 kg"},
+			{"nama": "Sapi PO", "kategori": "Tidak Layak Dipertahankan", "bobot": "430→418→403 kg"},
+		},
+		"inserted": inserted,
+	})
+}

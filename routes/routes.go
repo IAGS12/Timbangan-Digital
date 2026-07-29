@@ -70,6 +70,7 @@ func SetupRoutes(app *fiber.App) {
 	api.Post("/admin/reset-db", handlers.ResetDatabase)      // Dev/Debug: Reset seluruh database
 	api.Post("/admin/clear-devices", handlers.ClearDevices)  // Dev/Debug: Hapus data pairing saja
 	api.Post("/admin/clear-weighings", handlers.ClearWeighings) // Dev/Debug: Hapus data timbangan saja
+	api.Post("/admin/seed-demo", handlers.SeedDemo)          // Dev/Debug: Seed 3 sapi demo (Bali, Madura, PO)
 
 	// Endpoint Terproteksi (Wajib Login) — HARUS didaftarkan SETELAH route public di atas
 	protected := app.Group("/api", middleware.AuthMiddleware)
